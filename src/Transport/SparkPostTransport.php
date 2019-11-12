@@ -57,6 +57,7 @@ class SparkPostTransport extends Transport
 
         $recipients = $this->getRecipients($message);
 
+        $bcc = $message->getBcc();
         $message->setBcc([]);
 
         $response = $this->client->request('POST', $this->getEndpoint(), [
@@ -76,6 +77,8 @@ class SparkPostTransport extends Transport
         );
 
         $this->sendPerformed($message);
+
+        $message->setBcc($bcc);
 
         return $this->numberOfRecipients($message);
     }
