@@ -21,7 +21,21 @@ The package will automatically register its service provider.
 
 ## Usage
 
-You will also need to add the sparkpost API Key settings to the array in `config/services.php` and set up the environment key
+**Sparkpost API options**
+
+You can define specific [SparkPost options]
+(https://developers.sparkpost.com/api/transmissions/#header-request-body) like `open_tracking`, `click_tracking`, `transactional`
+
+**EU GDPR**
+
+You are able to use the EU endpoint for Europe GDPR compliance by setting the `endpoint` option or the default will be used.
+
+SparkPost (default): `https://api.sparkpost.com/api/v1`  
+SparkPost EU: `https://api.eu.sparkpost.com/api/v1`
+
+**Guzzle options**
+
+You are able to specify [Guzzle options](http://docs.guzzlephp.org/en/stable/request-options.html) in the SparkPost config section `guzzle`.
 
 ```php
 'sparkpost' => [
@@ -29,8 +43,10 @@ You will also need to add the sparkpost API Key settings to the array in `config
     'guzzle' => [
         'verify' => true,
         'decode_content' => true,
+        ...
     ],
     'options' => [
+        'endpoint' => env('SPARKPOST_ENDPOINT'),
         'open_tracking' => false,
         'click_tracking' => false,
         'transactional' => true,
@@ -38,11 +54,15 @@ You will also need to add the sparkpost API Key settings to the array in `config
 ],
 ```
 
+**API Key**
+
+You will also need to add the SparkPost API Key to your environment file
+
 ```php
 SPARKPOST_SECRET=__Your_key_here__
 ```
 
-Finally you need to set your mail driver to sparkpost. You can do this by changing the driver in `config/mail.php`
+Finally you need to set your mail driver to SparkPost. You can do this by changing the driver in `config/mail.php`
 
 ```php
 'driver' => env('MAIL_DRIVER', 'sparkpost'),
