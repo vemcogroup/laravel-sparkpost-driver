@@ -71,5 +71,8 @@ Finally you need to set your mail driver to SparkPost. You can do this by changi
 Or by setting the environment variable `MAIL_DRIVER` in your `.env` file
 
 ```php
+Laravel 6.x
 MAIL_DRIVER=sparkpost
+Laravel 7.x
+MAIL_MAILER=sparkpost
 ```
