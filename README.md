@@ -76,25 +76,15 @@ MAIL_DRIVER=sparkpost
 
 **Laravel 7**
 
-If you are using a clean Laravel 7.x installation its important you add the sparkpost config in `config/mail.php` mailer section.
+If you are using a clean Laravel 7.x installation its important you add the following sparkpost config in `config/mail.php` mailer section.
 
 ```php
 'mailers' => [
     ...
     'sparkpost' => [
-        'secret' => env('SPARKPOST_SECRET'),
-        'guzzle' => [
-            'verify' => true,
-            'decode_content' => true,
-        ],
-        'options' => [
-            'endpoint' => env('SPARKPOST_ENDPOINT'),
-            'open_tracking' => false,
-            'click_tracking' => false,
-            'transactional' => true,
-        ],
+        'transport' => 'sparkpost'
     ],
     ...
 ],
 ```
-And remove the `MAIL_MAILER` from .env and add `MAIL_DRIVER` instead.
+And replace the `MAIL_DRIVER` from .env with `MAIL_MAILER`, make sure to keep the sparkpost config on `config/services.php`.
