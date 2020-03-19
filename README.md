@@ -5,9 +5,18 @@
 
 ## Description
 
-This package allows you to still use SparkPost as MailDriver in Laravel 6.x
+This package allows you to still use SparkPost as MailDriver in Laravel.
 
 This package is inspired by: https://github.com/clarification/sparkpost-laravel-driver and updated with driver from Laravel 5.8.x
+
+## Version
+
+Find the correct version to use in the table below:
+
+| Laravel version | Version |
+| :---: | :---: |
+| 6.x | 2.x |
+| 7.x | 3.x |
 
 ## Installation
 
