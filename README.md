@@ -56,9 +56,11 @@ You are able to specify [Guzzle options](http://docs.guzzlephp.org/en/stable/req
     ],
     'options' => [
         'endpoint' => env('SPARKPOST_ENDPOINT'),
-        'open_tracking' => false,
-        'click_tracking' => false,
-        'transactional' => true,
+        'options' => [
+            'open_tracking' => false,
+            'click_tracking' => false,
+            'transactional' => true,
+        ],
     ],
 ],
 ```
