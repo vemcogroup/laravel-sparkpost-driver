@@ -44,7 +44,7 @@ SparkPost EU: `https://api.eu.sparkpost.com/api/v1`
 
 **Guzzle options**
 
-You are able to specify [Guzzle options](http://docs.guzzlephp.org/en/stable/request-options.html) in the SparkPost config section `guzzle`. Just add the sparkpost service in `config/services.php`.
+You are able to specify [Guzzle options](http://docs.guzzlephp.org/en/stable/request-options.html) in the SparkPost config section `guzzle`. Just add the sparkpost service to your `config/services.php`.
 
 ```php
 'sparkpost' => [
