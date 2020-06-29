@@ -44,7 +44,7 @@ SparkPost EU: `https://api.eu.sparkpost.com/api/v1`
 
 **Guzzle options**
 
-You are able to specify [Guzzle options](http://docs.guzzlephp.org/en/stable/request-options.html) in the SparkPost config section `guzzle`.
+You are able to specify [Guzzle options](http://docs.guzzlephp.org/en/stable/request-options.html) in the SparkPost config section `guzzle`. Just add the sparkpost service in `config/services.php`.
 
 ```php
 'sparkpost' => [
@@ -56,11 +56,10 @@ You are able to specify [Guzzle options](http://docs.guzzlephp.org/en/stable/req
     ],
     'options' => [
         'endpoint' => env('SPARKPOST_ENDPOINT'),
-        'options' => [
-            'open_tracking' => false,
-            'click_tracking' => false,
-            'transactional' => true,
-        ],
+        // other sparkpost options go here
+        'open_tracking' => false,
+        'click_tracking' => false,
+        'transactional' => true,
     ],
 ],
 ```
