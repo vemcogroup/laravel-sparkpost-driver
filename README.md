@@ -39,23 +39,31 @@ You can define specific [SparkPost options]
 
 You are able to use the EU endpoint for Europe GDPR compliance by setting the `endpoint` option or the default will be used.
 
-SparkPost (default): `https://api.sparkpost.com/api/v1`  
+SparkPost (default): `https://api.sparkpost.com/api/v1`
 SparkPost EU: `https://api.eu.sparkpost.com/api/v1`
 
 **Guzzle options**
 
-You are able to specify [Guzzle options](http://docs.guzzlephp.org/en/stable/request-options.html) in the SparkPost config section `guzzle`.
+You are able to specify [Guzzle options](http://docs.guzzlephp.org/en/stable/request-options.html) in the SparkPost config section `guzzle`. 
+
+Just add the sparkpost service to your `config/services.php`.
 
 ```php
 'sparkpost' => [
     'secret' => env('SPARKPOST_SECRET'),
+
+    // optional guzzle specific configuration
     'guzzle' => [
         'verify' => true,
         'decode_content' => true,
         ...
     ],
     'options' => [
+        // configure endpoint, if not default
         'endpoint' => env('SPARKPOST_ENDPOINT'),
+
+        // optional Sparkpost API options go here
+        'return_path' => 'mail@bounces.domain.com',
         'options' => [
             'open_tracking' => false,
             'click_tracking' => false,
