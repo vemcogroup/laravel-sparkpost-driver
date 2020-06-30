@@ -68,7 +68,7 @@ Just add the sparkpost service to your `config/services.php`.
             'open_tracking' => false,
             'click_tracking' => false,
             'transactional' => true,
-        ]
+        ],
     ],
 ],
 ```
