@@ -17,6 +17,7 @@ Find the correct version to use in the table below:
 | :---: | :---: |
 | 6.x | 2.x |
 | 7.x | 3.x |
+| 8.x | 4.x |
 
 ## Installation
 
