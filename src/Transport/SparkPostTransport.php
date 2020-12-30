@@ -3,7 +3,10 @@
 namespace Vemcogroup\SparkPostDriver\Transport;
 
 use Swift_Mime_SimpleMessage;
+use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\ClientInterface;
+use Illuminate\Http\JsonResponse;
+use Psr\Http\Message\ResponseInterface;
 use Illuminate\Mail\Transport\Transport;
 
 /**
@@ -53,7 +56,7 @@ class SparkPostTransport extends Transport
      */
     public function send(Swift_Mime_SimpleMessage $message, &$failedRecipients = null)
     {
-        $this->beforeSendPerformed($message);
+       $this->beforeSendPerformed($message);
 
         $recipients = $this->getRecipients($message);
 
@@ -66,7 +69,7 @@ class SparkPostTransport extends Transport
             $headers['X-MSYS-SUBACCOUNT'] = $subaccount_id->getValue();
         }
 
-        $response = $this->client->request('POST', $this->getEndpoint(), [
+        $response = $this->client->request('POST', $this->getEndpoint() . '/transmissions', [
             'headers' => $headers,
             'json' => array_merge([
                 'recipients' => $recipients,
@@ -85,6 +88,37 @@ class SparkPostTransport extends Transport
         $message->setBcc($bcc);
 
         return $this->numberOfRecipients($message);
+    }
+
+    public function deleteSupression($email): JsonResponse
+    {
+        try {
+            $response = $this->client->request('DELETE', $this->getEndpoint() . '/suppression-list/' . $email, [
+                'headers' => [
+                    'Authorization' => $this->key,
+                ],
+            ]);
+
+            return response()->json([
+                'code' => $response->getStatusCode(),
+                'message' => 'Recipient has been removed from supression list',
+            ]);
+        } catch(\Exception $e) {
+            $message = 'An error occured';
+
+            if ($e->getCode() === 403) {
+                $message = 'Recipient could not be removed - Compliance';
+            }
+
+            if ($e->getCode() === 404) {
+                $message = 'Recipient could not be found';
+            }
+
+            return response()->json([
+                'code' => $e->getCode(),
+                'message' => $message,
+            ]);
+        }
     }
 
     /**
@@ -117,7 +151,7 @@ class SparkPostTransport extends Transport
     /**
      * Get the transmission ID from the response.
      *
-     * @param  \GuzzleHttp\Psr7\Response  $response
+     * @param  Response  $response
      * @return string
      */
     protected function getTransmissionId($response)
@@ -155,7 +189,7 @@ class SparkPostTransport extends Transport
      */
     public function getEndpoint()
     {
-        return ($this->getOptions()['endpoint'] ?? 'https://api.sparkpost.com/api/v1') . '/transmissions';
+        return ($this->getOptions()['endpoint'] ?? 'https://api.sparkpost.com/api/v1');
     }
 
     /**
