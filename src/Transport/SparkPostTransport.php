@@ -118,6 +118,41 @@ class SparkPostTransport extends Transport
     }
 
     /**
+     * Email Address Validation - Validate a single email address.
+     *
+     * @param string $email
+     * @return array
+     */
+    public function validateSingleRecipient($email)
+    {
+        try {
+            $response = $this->client->request('GET', $this->getEndpoint() . '/recipient-validation/single/' . $email, [
+                'headers' => [
+                    'Authorization' => $this->key,
+                ],
+            ]);
+
+            return response()->json([
+                'code' => $response->getStatusCode(),
+                'results' => object_get(
+                    json_decode($response->getBody()->getContents()), 'results'
+                ),
+            ]);
+        } catch (\Throwable $th) {
+            $message = 'An error occured';
+            $errors = json_decode($th->getResponse()->getBody()->getContents(), true)['errors'] ?? [];
+            if (isset($errors) && count($errors)) {
+                $message = $errors[0]['message'];
+            }
+
+            return response()->json([
+                'code' => $th->getCode(),
+                'message' => $message,
+            ]);
+        }
+    }
+
+    /**
      * Get all the addresses this message should be sent to.
      *
      * Note that SparkPost still respects CC, BCC headers in raw message itself.
