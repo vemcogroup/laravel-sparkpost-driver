@@ -109,9 +109,14 @@ If you are using a clean Laravel 7.x installation its important you add the foll
 ```
 And replace the `MAIL_DRIVER` from .env with `MAIL_MAILER`, make sure to keep the sparkpost config on `config/services.php`.
 
-## Helper
+## Helper functions
 
-We made a helper function to delete supressions
+### Delete supressions
 ```php
 sparkpost_delete_supression('test@example.com');
+```
+
+### Validate single email address
+```php
+sparkpost_check_email('test@example.com');
 ```
