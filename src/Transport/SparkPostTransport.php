@@ -4,6 +4,7 @@ namespace Vemcogroup\SparkPostDriver\Transport;
 
 use JsonException;
 use GuzzleHttp\ClientInterface;
+use Illuminate\Http\JsonResponse;
 use Symfony\Component\Mime\RawMessage;
 use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\SentMessage;
@@ -144,5 +145,65 @@ class SparkPostTransport implements TransportInterface
         }
 
         return $attachments;
+    }
+
+    public function validateSingleRecipient($email): JsonResponse
+    {
+        try {
+            $response = $this->client->request('GET', $this->getEndpoint() . '/recipient-validation/single/' . $email, [
+                'headers' => [
+                    'Authorization' => $this->key,
+                ],
+            ]);
+
+            return response()->json([
+                'code' => $response->getStatusCode(),
+                'results' => object_get(
+                    json_decode($response->getBody()->getContents()), 'results'
+                ),
+            ]);
+        } catch (\Throwable $th) {
+            $message = 'An error occured';
+            $errors = json_decode($th->getResponse()->getBody()->getContents(), true)['errors'] ?? [];
+            if (isset($errors) && count($errors)) {
+                $message = $errors[0]['message'];
+            }
+
+            return response()->json([
+                'code' => $th->getCode(),
+                'message' => $message,
+            ]);
+        }
+    }
+
+    public function deleteSupression($email): JsonResponse
+    {
+        try {
+            $response = $this->client->request('DELETE', $this->getEndpoint() . '/suppression-list/' . $email, [
+                'headers' => [
+                    'Authorization' => $this->key,
+                ],
+            ]);
+
+            return response()->json([
+                'code' => $response->getStatusCode(),
+                'message' => 'Recipient has been removed from supression list',
+            ]);
+        } catch(\Exception $e) {
+            $message = 'An error occured';
+
+            if ($e->getCode() === 403) {
+                $message = 'Recipient could not be removed - Compliance';
+            }
+
+            if ($e->getCode() === 404) {
+                $message = 'Recipient could not be found';
+            }
+
+            return response()->json([
+                'code' => $e->getCode(),
+                'message' => $message,
+            ]);
+        }
     }
 }
