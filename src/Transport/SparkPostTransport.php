@@ -2,18 +2,16 @@
 
 namespace Vemcogroup\SparkPostDriver\Transport;
 
-use Swift_Mime_SimpleMessage;
-use GuzzleHttp\Psr7\Response;
+use JsonException;
 use GuzzleHttp\ClientInterface;
-use Illuminate\Http\JsonResponse;
-use Psr\Http\Message\ResponseInterface;
-use Illuminate\Mail\Transport\Transport;
+use Symfony\Component\Mime\RawMessage;
+use Symfony\Component\Mailer\Envelope;
+use Symfony\Component\Mailer\SentMessage;
+use Symfony\Component\Mailer\Transport\TransportInterface;
+use function ucfirst;
+use function base64_encode;
 
-/**
- * This is a direct copy of the driver included in Laravel 5.8.x
- * https://github.com/laravel/framework/blob/5.8/src/Illuminate/Mail/Transport/SparkPostTransport.php
- */
-class SparkPostTransport extends Transport
+class SparkPostTransport implements TransportInterface
 {
     /**
      * Guzzle client instance.
@@ -51,17 +49,24 @@ class SparkPostTransport extends Transport
         $this->options = $options;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function send(Swift_Mime_SimpleMessage $message, &$failedRecipients = null)
+    public function __toString(): string
     {
-        $this->beforeSendPerformed($message);
+        return 'sparkpost';
+    }
 
+    public function getOptions(): array
+    {
+        return $this->options;
+    }
+
+    public function getEndpoint(): string
+    {
+        return ($this->getOptions()['endpoint'] ?? 'https://api.sparkpost.com/api/v1');
+    }
+
+    public function send(RawMessage $message, Envelope $envelope = null): ?SentMessage
+    {
         $recipients = $this->getRecipients($message);
-
-        $bcc = $message->getBcc();
-        $message->setBcc([]);
 
         $response = $this->client->request('POST', $this->getEndpoint() . '/transmissions', [
             'headers' => [
@@ -70,7 +75,11 @@ class SparkPostTransport extends Transport
             'json' => array_merge([
                 'recipients' => $recipients,
                 'content' => [
-                    'email_rfc822' => $message->toString(),
+                    'from' => $this->getFrom($message),
+                    'subject' => $message->getSubject(),
+                    'html' => $message->getHtmlBody(),
+                    'text' => $message->getTextBody(),
+                    'attachments' => $this->getAttachments($message),
                 ],
             ], $this->options),
         ]);
@@ -79,168 +88,61 @@ class SparkPostTransport extends Transport
             'X-SparkPost-Transmission-ID', $this->getTransmissionId($response)
         );
 
-        $this->sendPerformed($message);
-
-        $message->setBcc($bcc);
-
-        return $this->numberOfRecipients($message);
+        return new SentMessage($message, $envelope);;
     }
 
-    public function deleteSupression($email): JsonResponse
+    protected function getFrom(RawMessage $message): ?array
     {
-        try {
-            $response = $this->client->request('DELETE', $this->getEndpoint() . '/suppression-list/' . $email, [
-                'headers' => [
-                    'Authorization' => $this->key,
-                ],
-            ]);
-
-            return response()->json([
-                'code' => $response->getStatusCode(),
-                'message' => 'Recipient has been removed from supression list',
-            ]);
-        } catch(\Exception $e) {
-            $message = 'An error occured';
-
-            if ($e->getCode() === 403) {
-                $message = 'Recipient could not be removed - Compliance';
-            }
-
-            if ($e->getCode() === 404) {
-                $message = 'Recipient could not be found';
-            }
-
-            return response()->json([
-                'code' => $e->getCode(),
-                'message' => $message,
-            ]);
+        $from = $message->getFrom();
+        if (count($from)) {
+            return ['name' => $from[0]->getName(), 'email' => $from[0]->getAddress()];
         }
+
+        return null;
     }
 
-    /**
-     * Email Address Validation - Validate a single email address.
-     *
-     * @param string $email
-     * @return array
-     */
-    public function validateSingleRecipient($email)
-    {
-        try {
-            $response = $this->client->request('GET', $this->getEndpoint() . '/recipient-validation/single/' . $email, [
-                'headers' => [
-                    'Authorization' => $this->key,
-                ],
-            ]);
-
-            return response()->json([
-                'code' => $response->getStatusCode(),
-                'results' => object_get(
-                    json_decode($response->getBody()->getContents()), 'results'
-                ),
-            ]);
-        } catch (\Throwable $th) {
-            $message = 'An error occured';
-            $errors = json_decode($th->getResponse()->getBody()->getContents(), true)['errors'] ?? [];
-            if (isset($errors) && count($errors)) {
-                $message = $errors[0]['message'];
-            }
-
-            return response()->json([
-                'code' => $th->getCode(),
-                'message' => $message,
-            ]);
-        }
-    }
-
-    /**
-     * Get all the addresses this message should be sent to.
-     *
-     * Note that SparkPost still respects CC, BCC headers in raw message itself.
-     *
-     * @param  \Swift_Mime_SimpleMessage $message
-     * @return array
-     */
-    protected function getRecipients(Swift_Mime_SimpleMessage $message)
+    protected function getRecipients(RawMessage $message): array
     {
         $recipients = [];
 
-        foreach ((array) $message->getTo() as $email => $name) {
-            $recipients[] = ['address' => compact('name', 'email')];
-        }
-
-        foreach ((array) $message->getCc() as $email => $name) {
-            $recipients[] = ['address' => compact('name', 'email')];
-        }
-
-        foreach ((array) $message->getBcc() as $email => $name) {
-            $recipients[] = ['address' => compact('name', 'email')];
+        foreach (['to', 'cc', 'bcc'] as $type) {
+            if ($addresses = $message->{'get' . ucfirst($type)}()) {
+                foreach ($addresses as $recipient) {
+                    $recipients[] = [
+                        'address' => [
+                            'name' => $recipient->getName(),
+                            'email' => $recipient->getAddress(),
+                        ],
+                    ];
+                }
+            }
         }
 
         return $recipients;
     }
 
     /**
-     * Get the transmission ID from the response.
-     *
-     * @param  Response  $response
-     * @return string
+     * @throws JsonException
      */
-    protected function getTransmissionId($response)
+    protected function getTransmissionId($response): string
     {
         return object_get(
-            json_decode($response->getBody()->getContents()), 'results.id'
+            json_decode($response->getBody()->getContents(), false, 512, JSON_THROW_ON_ERROR), 'results.id'
         );
     }
 
-    /**
-     * Get the API key being used by the transport.
-     *
-     * @return string
-     */
-    public function getKey()
+    protected function getAttachments(RawMessage $message): array
     {
-        return $this->key;
-    }
+        $attachments = [];
 
-    /**
-     * Set the API key being used by the transport.
-     *
-     * @param  string  $key
-     * @return string
-     */
-    public function setKey($key)
-    {
-        return $this->key = $key;
-    }
+        foreach ($message->getAttachments() as $attachment) {
+            $attachments[] = [
+                'name' => $attachment->getPreparedHeaders()->get('content-disposition')->getParameter('filename'),
+                'type' => $attachment->getMediaType() . '/' . $attachment->getMediaSubtype(),
+                'data' => base64_encode($attachment->getBody()),
+            ];
+        }
 
-    /**
-     * Get the SparkPost API endpoint.
-     *
-     * @return string
-     */
-    public function getEndpoint()
-    {
-        return ($this->getOptions()['endpoint'] ?? 'https://api.sparkpost.com/api/v1');
-    }
-
-    /**
-     * Get the transmission options being used by the transport.
-     *
-     * @return array
-     */
-    public function getOptions()
-    {
-        return $this->options;
-    }
-
-    /**
-     * Set the transmission options being used by the transport.
-     *
-     * @param  array  $options
-     * @return array
-     */
-    public function setOptions(array $options)
-    {
-        return $this->options = $options;
+        return $attachments;
     }
 }
