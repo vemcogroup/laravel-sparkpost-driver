@@ -14,10 +14,11 @@ This package is inspired by: https://github.com/clarification/sparkpost-laravel-
 Find the correct version to use in the table below:
 
 | Laravel version | Version |
-| :---: | :---: |
-| 6.x | 2.x |
-| 7.x | 3.x |
-| 8.x | 4.x |
+|:---------------:|:-------:|
+|       6.x       |   2.x   |
+|       7.x       |   3.x   |
+|       8.x       |   4.x   |
+|       9.x       |   5.x   |
 
 ## Installation
 
