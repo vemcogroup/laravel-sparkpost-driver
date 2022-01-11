@@ -17,8 +17,8 @@
         }
     ],
     "require": {
-        "php": "^7.3|^8.0",
-        "guzzlehttp/guzzle": "^6.3|^7.0.1",
+        "php": "^8.0.2",
+        "guzzlehttp/guzzle": "guzzlehttp/guzzle: ^7.2",
         "laravel/framework": "^9.0",
         "symfony/mailer": "^6.0",
         "ext-json": "*"
