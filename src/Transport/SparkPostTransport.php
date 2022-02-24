@@ -60,6 +60,11 @@ class SparkPostTransport implements TransportInterface
         return $this->options;
     }
 
+    public function setOptions(array $options): void
+    {
+        $this->options = $options;
+    }
+
     public function getEndpoint(): string
     {
         return ($this->getOptions()['endpoint'] ?? 'https://api.sparkpost.com/api/v1');
