@@ -83,6 +83,7 @@ class SparkPostTransport implements TransportInterface
                 'content' => [
                     'from' => $this->getFrom($message),
                     'subject' => $message->getSubject(),
+                    'reply_to' => $this->getReplyTo($message),
                     'html' => $message->getHtmlBody(),
                     'text' => $message->getTextBody(),
                     'attachments' => $this->getAttachments($message),
@@ -94,17 +95,32 @@ class SparkPostTransport implements TransportInterface
             'X-SparkPost-Transmission-ID', $this->getTransmissionId($response)
         );
 
-        return new SentMessage($message, $envelope);;
+        return new SentMessage($message, $envelope);
     }
 
     protected function getFrom(RawMessage $message): ?array
     {
         $from = $message->getFrom();
+
         if (count($from)) {
             return ['name' => $from[0]->getName(), 'email' => $from[0]->getAddress()];
         }
 
         return null;
+    }
+
+    protected function getReplyTo(RawMessage $message): ?string
+    {
+        $replyTo = $message->getHeaders()->getHeaderBody('reply-to') ?: [];
+
+        if (!count($replyTo)) {
+            return null;
+        }
+
+        $name = $replyTo[0]->getName();
+        $email = $replyTo[0]->getAddress();
+
+        return empty($email) ? $email : "{$name} <{$email}>";
     }
 
     protected function getRecipients(RawMessage $message): array
