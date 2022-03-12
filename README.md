@@ -86,7 +86,7 @@ SPARKPOST_SECRET=__Your_key_here__
 Finally you need to set your mail driver to SparkPost. You can do this by changing the driver in `config/mail.php`
 
 ```php
-'driver' => env('MAIL_DRIVER', 'sparkpost'),
+'driver' => env('MAIL_MAILER', 'sparkpost'),
 ```
 
 Or by setting the environment variable `MAIL_DRIVER` in your `.env` file
@@ -95,9 +95,7 @@ Or by setting the environment variable `MAIL_DRIVER` in your `.env` file
 MAIL_DRIVER=sparkpost
 ```
 
-**Laravel 7**
-
-If you are using a clean Laravel 7.x installation its important you add the following sparkpost config in `config/mail.php` mailer section.
+For any versions after Laravel 7.x, you will also need to add back in the sparkpost driver to the `config/mail.php` mailer section.
 
 ```php
 'mailers' => [
@@ -108,7 +106,11 @@ If you are using a clean Laravel 7.x installation its important you add the foll
     ...
 ],
 ```
-And replace the `MAIL_DRIVER` from .env with `MAIL_MAILER`, make sure to keep the sparkpost config on `config/services.php`.
+
+**Laravel 5**
+
+If you are still using Laravel 5, the `MAIL_MAILER` referenced above will instead be `MAIL_DRIVER`.
+
 
 ## Helper functions
 
