@@ -14,10 +14,11 @@ This package is inspired by: https://github.com/clarification/sparkpost-laravel-
 Find the correct version to use in the table below:
 
 | Laravel version | Version |
-| :---: | :---: |
-| 6.x | 2.x |
-| 7.x | 3.x |
-| 8.x | 4.x |
+|:---------------:|:-------:|
+|       6.x       |   2.x   |
+|       7.x       |   3.x   |
+|       8.x       |   4.x   |
+|       9.x       |   5.x   |
 
 ## Installation
 
@@ -27,16 +28,36 @@ You can install the package via composer:
 composer require vemcogroup/laravel-sparkpost-driver
 ```
 
+If you're running an older version of Laravel, make sure you include the version number in your install. For example, for Laravel 8.x:
+
+```bash
+composer require vemcogroup/laravel-sparkpost-driver:4.x
+```
+
 The package will automatically register its service provider.
 
 ## Usage
+
+You will need to configure your Laravel installation before you can use Sparkpost.
+
+**1. Update config/services.php**
+
+You will need to add Sparkpost service to your `config/services.php`:
+
+```php
+'sparkpost' => [
+    'secret' => env('SPARKPOST_SECRET')
+],
+```
+
+You can configure additional options there, too:
 
 **Sparkpost API options**
 
 You can define specific [SparkPost options]
 (https://developers.sparkpost.com/api/transmissions/#header-request-body) like `open_tracking`, `click_tracking`, `transactional`
 
-**EU GDPR**
+**EU GDPR compliance**
 
 You are able to use the EU endpoint for Europe GDPR compliance by setting the `endpoint` option or the default will be used.
 
@@ -47,7 +68,7 @@ SparkPost EU: `https://api.eu.sparkpost.com/api/v1`
 
 You are able to specify [Guzzle options](http://docs.guzzlephp.org/en/stable/request-options.html) in the SparkPost config section `guzzle`. 
 
-Just add the sparkpost service to your `config/services.php`.
+Just include the additional configuration in your `config/services.php`.
 
 ```php
 'sparkpost' => [
@@ -74,29 +95,35 @@ Just add the sparkpost service to your `config/services.php`.
 ],
 ```
 
-**API Key**
+**2. Set API Key**
 
-You will also need to add the SparkPost API Key to your environment file
+You will also need to add the SparkPost API Key to your environment (`.env`) file:
 
 ```php
 SPARKPOST_SECRET=__Your_key_here__
 ```
 
-Finally you need to set your mail driver to SparkPost. You can do this by changing the driver in `config/mail.php`
+**3. Set Mail Driver**
+
+You need to set your mail driver to SparkPost. 
+
+You can do this by setting the environment variable `MAIL_MAILER` in your `.env` file
 
 ```php
-'driver' => env('MAIL_DRIVER', 'sparkpost'),
+MAIL_MAILER=sparkpost
 ```
 
-Or by setting the environment variable `MAIL_DRIVER` in your `.env` file
+Or, alternatively by changing the driver in `config/mail.php`:
 
 ```php
-MAIL_DRIVER=sparkpost
+'driver' => env('MAIL_MAILER', 'sparkpost'),
 ```
 
-**Laravel 7**
+> Note: If you are still using Laravel 5, `MAIL_MAILER` will be referenced as `MAIL_DRIVER`.
 
-If you are using a clean Laravel 7.x installation its important you add the following sparkpost config in `config/mail.php` mailer section.
+**4. Update config/mail.php**
+
+Finally, you will also need to add the `sparkpost` driver to the `config/mail.php` mailer section.
 
 ```php
 'mailers' => [
@@ -107,7 +134,8 @@ If you are using a clean Laravel 7.x installation its important you add the foll
     ...
 ],
 ```
-And replace the `MAIL_DRIVER` from .env with `MAIL_MAILER`, make sure to keep the sparkpost config on `config/services.php`.
+
+> Note: Laravel 5 already includes this configuration, so you don't need to do it if you're using Laravel 5
 
 ## Helper functions
 
