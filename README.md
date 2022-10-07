@@ -151,7 +151,7 @@ sparkpost_check_email('test@example.com');
 
 ## Mail Subaccounts
 
-To send an email using a [SparkPost mail subaccount] (https://support.sparkpost.com/docs/user-guide/subaccounts), add the desired subaccount id to the message header before sending:
+To send an email using a [SparkPost mail subaccount](https://support.sparkpost.com/docs/user-guide/subaccounts), add the desired subaccount id to the message header before sending:
 ```php
 $subaccount_id = 1234;
 $this->withSymfonyMessage(function ($message) use ($subaccount_id) {
