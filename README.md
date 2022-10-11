@@ -66,7 +66,7 @@ SparkPost EU: `https://api.eu.sparkpost.com/api/v1`
 
 **Guzzle options**
 
-You are able to specify [Guzzle options](http://docs.guzzlephp.org/en/stable/request-options.html) in the SparkPost config section `guzzle`. 
+You are able to specify [Guzzle options](http://docs.guzzlephp.org/en/stable/request-options.html) in the SparkPost config section `guzzle`.
 
 Just include the additional configuration in your `config/services.php`.
 
@@ -105,7 +105,7 @@ SPARKPOST_SECRET=__Your_key_here__
 
 **3. Set Mail Driver**
 
-You need to set your mail driver to SparkPost. 
+You need to set your mail driver to SparkPost.
 
 You can do this by setting the environment variable `MAIL_MAILER` in your `.env` file
 
@@ -148,3 +148,14 @@ sparkpost_delete_supression('test@example.com');
 ```php
 sparkpost_check_email('test@example.com');
 ```
+
+## Mail Subaccounts
+
+To send an email using a [SparkPost mail subaccount](https://support.sparkpost.com/docs/user-guide/subaccounts), add the desired subaccount id to the message header before sending:
+```php
+$subaccount_id = 1234;
+$this->withSymfonyMessage(function ($message) use ($subaccount_id) { // 'this' is a mailable
+    $headers = $message->getHeaders();
+    $headers->addTextHeader('subaccount_id', $subaccount_id);
+});
+``` 
