@@ -5,6 +5,7 @@ namespace Vemcogroup\SparkPostDriver\Transport;
 use JsonException;
 use GuzzleHttp\ClientInterface;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\Mime\Message;
 use Symfony\Component\Mime\RawMessage;
 use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\SentMessage;
@@ -74,10 +75,18 @@ class SparkPostTransport implements TransportInterface
     {
         $recipients = $this->getRecipients($message);
 
-        $headers = ['Authorization' => $this->key];
-        $subaccount_id = $message->getHeaders()->get('subaccount_id');
-        if ($subaccount_id) {
-            $headers['X-MSYS-SUBACCOUNT'] = $subaccount_id->getValue();
+        $headers = [
+            'Authorization' => $this->key
+        ];
+
+        if ($message instanceof Message) {
+            $headers = array_merge($message->getHeaders()->toArray(), $headers);
+
+            // Backwards compatibility with previous subaccount_id implementation.
+            if (isset($headers['subaccount_id'])) {
+                $headers['X-MSYS-SUBACCOUNT'] = $headers['subaccount_id'];
+                unset($headers['subaccount_id']);
+            }
         }
 
         $response = $this->client->request('POST', $this->getEndpoint() . '/transmissions', [
@@ -95,9 +104,11 @@ class SparkPostTransport implements TransportInterface
             ], $this->options),
         ]);
 
-        $message->getHeaders()->addTextHeader(
-            'X-SparkPost-Transmission-ID', $this->getTransmissionId($response)
-        );
+        if ($message instanceof Message) {
+            $message->getHeaders()->addTextHeader(
+                'X-SparkPost-Transmission-ID', $this->getTransmissionId($response)
+            );
+        }
 
         return new SentMessage($message, $envelope);
     }

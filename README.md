@@ -149,13 +149,21 @@ sparkpost_delete_supression('test@example.com');
 sparkpost_check_email('test@example.com');
 ```
 
-## Mail Subaccounts
+## Subaccounts & metadata
+To send emails for a specific [SparkPost subaccount](https://support.sparkpost.com/docs/user-guide/subaccounts), or
+add [other metadata](https://developers.sparkpost.com/api/smtp/#header-using-the-x-msys-api-custom-header), you can add
+the Sparkpost `X-MSYS-SUBACCOUNT` and `X-MSYS-API` headers to your message.
 
-To send an email using a [SparkPost mail subaccount](https://support.sparkpost.com/docs/user-guide/subaccounts), add the desired subaccount id to the message header before sending:
 ```php
-$subaccount_id = 1234;
-$this->withSymfonyMessage(function ($message) use ($subaccount_id) { // 'this' is a mailable
+$campaignId = 5678;
+$subaccountId = 1234;
+
+$message->withSymfonyMessage(function ($message) use ($campaignId, $subaccountId) {
     $headers = $message->getHeaders();
-    $headers->addTextHeader('subaccount_id', $subaccount_id);
+
+    $headers->addTextHeader('X-MSYS-SUBACCOUNT', $subaccountId);
+    $headers->addTextHeader('X-MSYS-API', json_encode([
+        'campaign_id' => $campaignId,
+    ]));
 });
-``` 
+```
