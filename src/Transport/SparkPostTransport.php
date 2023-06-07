@@ -83,6 +83,7 @@ class SparkPostTransport implements TransportInterface
         $response = $this->client->request('POST', $this->getEndpoint() . '/transmissions', [
             'headers' => $headers,
             'json' => array_merge([
+                'options' => $this->getOptions(),
                 'recipients' => $recipients,
                 'content' => [
                     'from' => $this->getFrom($message),
@@ -92,7 +93,7 @@ class SparkPostTransport implements TransportInterface
                     'text' => $message->getTextBody(),
                     'attachments' => $this->getAttachments($message),
                 ],
-            ], $this->options),
+            ]),
         ]);
 
         $message->getHeaders()->addTextHeader(
