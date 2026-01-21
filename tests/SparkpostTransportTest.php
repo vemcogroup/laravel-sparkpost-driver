@@ -95,6 +95,7 @@ it('sends an email via the Sparkpost Transmissions API', function () {
                         'data' => base64_encode($attachmentB->getContent()),
                     ],
                 ],
+                'inline_images' => [],
                 'headers'     => [
                     'CC' => 'cc-a@example.com,cc-b@example.com',
                 ],
@@ -103,6 +104,81 @@ it('sends an email via the Sparkpost Transmissions API', function () {
     expect($message->toString())
         ->not->toContain('bcc-a@example.com')
         ->not->toContain('bcc-b@example.com');
+});
+
+it('sends embedded images', function () {
+    View::addNamespace('test', __DIR__ . '/views');
+
+    [
+        'client'       => $client,
+        'sentRequests' => $sentRequests,
+    ] = createGuzzleClient([
+        new Response(200, ['Content-Type' => 'application/json'], json_encode([
+            'results' => ['id' => 'MESSAGE_ID'],
+        ], JSON_THROW_ON_ERROR)),
+    ]);
+
+    Mail::extend('sparkpost', fn () => new SparkPostTransport($client, 'secret_key'));
+
+    $attachment = (new FileFactory)->image('attachment.png');
+
+    $message = Mail::mailer('sparkpost')
+        ->to('recipient@example.com')
+        ->send(new class([$attachment]) extends Mailable {
+            public function __construct(private array $attachmentsToSend) {}
+
+            public function build(): Mailable
+            {
+                foreach ($this->attachmentsToSend as $attachment) {
+                    $this->attach($attachment, ['as' => $attachment->name, 'mime' => 'image/png']);
+                }
+
+                return $this
+                    ->subject('Mail subject')
+                    ->view('test::mail-with-embed');
+
+            }
+        });
+
+    expect($sentAttachments = $message->getSymfonySentMessage()->getOriginalMessage()->getAttachments())
+        ->toHaveCount(2);
+
+    /** @var \GuzzleHttp\Psr7\Request $request */
+    $request = $sentRequests[0]['request'];
+
+    expect(json_decode($request->getBody()->getContents(), true))
+        ->toEqual([
+            'recipients' => [
+                ['address' => ['email' => 'recipient@example.com', 'name' => '', 'header_to' => 'recipient@example.com']],
+            ],
+            'content'    => [
+                'subject'       => 'Mail subject',
+                'from'          => ['name' => 'Example', 'email' => 'hello@example.com'],
+                'reply_to'      => null,
+                'html'          => sprintf(<<<HTML
+                    <html>
+                      <body>
+                        <img src="cid:%s">
+                      </body>
+                    </html>
+                    HTML, $sentAttachments[0]->getContentId()),
+                'text'          => null,
+                'attachments'   => [
+                    [
+                        'name' => $attachment->name,
+                        'type' => $attachment->getMimeType(),
+                        'data' => base64_encode($attachment->getContent()),
+                    ],
+                ],
+                'inline_images' => [
+                    [
+                        'name' => 'img.png',
+                        'type' => 'application/octet-stream',
+                        'data' => 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+                    ],
+                ],
+            ],
+        ]);
 });
 
 it('allows customizing the request body', function () {
@@ -129,7 +205,7 @@ it('allows customizing the request body', function () {
 /**
  * @param list<Response> $responses
  *
- * @return array{client: Client, sentRequests: \Illuminate\Support\Collection<int, Response>}
+ * @return array{client: Client, sentRequests: \Illuminate\Support\Collection<int, array{request: \Psr\Http\Message\RequestInterface, response: Response, error: mixed, options: array}>}
  */
 function createGuzzleClient(array $responses): array
 {
