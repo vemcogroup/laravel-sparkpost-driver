@@ -5,11 +5,13 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Foundation\Application;
 use Illuminate\Http\Testing\FileFactory;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\SentMessage;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\HtmlString;
+use Symfony\Component\Mime\Part\DataPart;
 use Vemcogroup\SparkPostDriver\Transport\SparkpostTransport;
 
 it('sends an email via the Sparkpost Transmissions API', function () {
@@ -143,6 +145,17 @@ it('sends embedded images', function () {
     expect($sentAttachments = $message->getSymfonySentMessage()->getOriginalMessage()->getAttachments())
         ->toHaveCount(2);
 
+    /** @var DataPart $inlineImage */
+    $inlineImage = collect($sentAttachments)->first(function (DataPart $attachment) {
+        return $attachment->getDisposition() === 'inline';
+    });
+
+    if (version_compare(Application::VERSION, '12', '>=')) {
+        $cid = $inlineImage->getContentId();
+    } else {
+        $cid = $inlineImage->getName();
+    }
+
     /** @var \GuzzleHttp\Psr7\Request $request */
     $request = $sentRequests[0]['request'];
 
@@ -161,7 +174,7 @@ it('sends embedded images', function () {
                         <img src="cid:%s">
                       </body>
                     </html>
-                    HTML, $sentAttachments[0]->getContentId()),
+                    HTML, $cid),
                 'text'          => null,
                 'attachments'   => [
                     [
@@ -172,8 +185,8 @@ it('sends embedded images', function () {
                 ],
                 'inline_images' => [
                     [
-                        'name' => 'img.png',
-                        'type' => 'application/octet-stream',
+                        'name' => $cid,
+                        'type' => 'image/png',
                         'data' => 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
                     ],
                 ],
