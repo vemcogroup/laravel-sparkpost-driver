@@ -73,7 +73,7 @@ class SparkPostTransport implements TransportInterface
         return ($this->getOptions()['endpoint'] ?? 'https://api.sparkpost.com/api/v1');
     }
 
-    public function send(RawMessage $message, Envelope $envelope = null): ?SentMessage
+    public function send(RawMessage $message, ?Envelope $envelope = null): ?SentMessage
     {
         $recipients = $this->getRecipients($message);
 
